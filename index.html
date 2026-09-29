@@ -79,7 +79,7 @@
 
   <nav class="bottom-nav">
     <a href="#" class="on" id="navHome"><i>🏠</i>Ana səhifə</a>
-    <a href="#" id="navSearch"><i>🔍</i>Axtar</a>
+    <a href="#" id="navMsgs"><i>💬</i>Mesajlar</a>
     <a href="#" class="plus" id="plusBtn"><i>＋</i></a>
     <a href="#" id="navFavs"><i>❤️</i>Seçilmişlər<b class="badge" id="favCount" hidden>0</b></a>
     <a href="#" id="navProfile"><i>👤</i>Profil</a>
@@ -119,11 +119,35 @@
       <p class="d-desc" id="dDesc"></p>
     </div>
     <div class="d-actions">
+      <a class="d-msg" id="dMsg" href="#">✉️ Mesaj yaz</a>
       <a class="d-call" id="dCall" href="#">📞 Zəng et</a>
       <a class="d-wa" id="dWa" href="#" target="_blank" rel="noopener">💬 WhatsApp</a>
     </div>
   </section>
+<section class="inbox" id="inbox" hidden>
+    <h2 class="inbox-title">Mesajlar</h2>
+    <div id="inboxList"></div>
+    <p class="empty" id="inboxEmpty" hidden>Hələ yazışman yoxdur. Elana baxıb "Mesaj yaz" düyməsinə bas.</p>
+  </section>
 
+  <section class="chat" id="chat" hidden>
+    <div class="chat-top">
+      <button class="d-btn" id="cBack" aria-label="Geri">←</button>
+      <div class="chat-head"><b id="cTitle"></b><small id="cSub"></small></div>
+    </div>
+    <div class="chat-msgs" id="cMsgs"></div>
+    <div class="chat-input">
+      <input id="cText" placeholder="Mesaj yaz..." autocomplete="off">
+      <button id="cSend" aria-label="Göndər">➤</button>
+    </div>
+  </section>
+ <section class="profile" id="profile" hidden>
+    <div id="profileBody"></div>
+  </section>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

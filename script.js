@@ -133,24 +133,31 @@ grid.addEventListener("click", e => {
 // ===== Alt menyu =====
 function go(e, next) {
   e.preventDefault();
+ closeInbox(); closeProfile();
   view = next;
   render();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 navHome.addEventListener("click", e => go(e, "home"));
 navFavs.addEventListener("click", e => go(e, "favs"));
-$("navSearch").addEventListener("click", e => { go(e, "home"); searchEl.focus(); });
-$("navProfile").addEventListener("click", e => {
-  e.preventDefault();
-  alert("Profil səhifəsi növbəti mərhələdə əlavə olunacaq.");
-});
+$("navMsgs").addEventListener("click", e => { e.preventDefault(); openInbox(); });
+$("navProfile").addEventListener("click", e => { e.preventDefault(); openProfile(); });
 
 // ===== Elan yerləşdirmə =====
 const sheet = $("sheet");
 const openSheet = e => { if (e) e.preventDefault(); sheet.hidden = false; };
 const closeSheet = () => { sheet.hidden = true; };
 
-$("plusBtn").addEventListener("click", openSheet);
+$("plusBtn").addEventListener("click", e => {
+  e.preventDefault();
+  if (fbReady && !currentUser) {
+    authMode = "signup";
+    openProfile();
+    alert("Elan yerləşdirmək üçün əvvəl hesab aç.");
+    return;
+  }
+  openSheet();
+});
 $("fCancel").addEventListener("click", closeSheet);
 sheet.addEventListener("click", e => { if (e.target === sheet) closeSheet(); });
 
@@ -166,6 +173,7 @@ $("fSave").addEventListener("click", () => {
   });
   $("fName").value = ""; $("fPrice").value = ""; $("fCity").value = "";
   view = "home";
+  closeInbox(); closeProfile();
   render();
   closeSheet();
 });
@@ -212,4 +220,213 @@ $("dFav").addEventListener("click", () => {
   saveFavs();
   $("dFav").classList.toggle("on", favs.has(openName));
   render();
+});// ===== Mesajlar =====
+const inbox = $("inbox"), chat = $("chat");
+const inboxList = $("inboxList"), inboxEmpty = $("inboxEmpty");
+const cMsgs = $("cMsgs"), cText = $("cText");
+let chatName = null;
+
+let chats;
+try { chats = JSON.parse(localStorage.getItem("mobilyol_chats") || "{}"); }
+catch { chats = {}; }
+const saveChats = () => {
+  try { localStorage.setItem("mobilyol_chats", JSON.stringify(chats)); } catch {}
+};
+
+const esc = s => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const hhmm = t => new Date(t).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+
+function renderInbox() {
+  const names = Object.keys(chats)
+    .filter(n => chats[n].length)
+    .sort((a, b) => chats[b][chats[b].length - 1].t - chats[a][chats[a].length - 1].t);
+  inboxEmpty.hidden = names.length > 0;
+  inboxList.innerHTML = names.map(n => {
+    const p = phones.find(x => x.name === n);
+    const last = chats[n][chats[n].length - 1];
+    return `<div class="chat-row" data-name="${esc(n)}">
+      <div class="avatar">${p ? p.emoji : "📱"}</div>
+      <div class="row-body"><b>${esc(n)}</b><span>${esc(last.text)}</span></div>
+      <small>${hhmm(last.t)}</small>
+    </div>`;
+  }).join("");
+}
+
+function openInbox() {
+  closeDetail();
+  renderInbox();
+  inbox.hidden = false;
+  navHome.classList.remove("on");
+  navFavs.classList.remove("on");
+  $("navMsgs").classList.add("on");
+}
+  function closeInbox() {
+  closeProfile();
+  closeDetail();
+  inbox.hidden = true;
+  $("navMsgs").classList.remove("on");
+}
+
+function renderChat() {
+  const list = chats[chatName] || [];
+  cMsgs.innerHTML =
+    '<p class="chat-hint">Sınaq rejimi: mesajlar hələlik yalnız bu telefonda saxlanılır.</p>' +
+    list.map(m => `<div class="bubble ${m.from}">${esc(m.text)}<small>${hhmm(m.t)}</small></div>`).join("");
+  cMsgs.scrollTop = cMsgs.scrollHeight;
+}
+function openChat(name) {
+  const p = phones.find(x => x.name === name);
+  chatName = name;
+  $("cTitle").textContent = name;
+  $("cSub").textContent = p ? `${p.city} • ${p.price} ₼` : "";
+  renderChat();
+  chat.hidden = false;
+}
+function closeChat() {
+  chat.hidden = true;
+  chatName = null;
+  if (!inbox.hidden) renderInbox();
+}
+function sendMsg() {
+  const text = cText.value.trim();
+  if (!text || !chatName) return;
+  (chats[chatName] = chats[chatName] || []).push({ from: "me", text, t: Date.now() });
+  saveChats();
+  cText.value = "";
+  renderChat();
+}
+
+inboxList.addEventListener("click", e => {
+  const row = e.target.closest(".chat-row");
+  if (row) openChat(row.dataset.name);
 });
+$("cBack").addEventListener("click", closeChat);
+$("cSend").addEventListener("click", sendMsg);
+cText.addEventListener("keydown", e => { if (e.key === "Enter") sendMsg(); });
+$("dMsg").addEventListener("click", e => { e.preventDefault(); if (openName) openChat(openName); });// ===== Profil və giriş (Firebase) =====
+const firebaseConfig = {
+  apiKey: "AIzaSyD9PQBrveAB_lscWoBS4g7wXWcyzhaAw38",
+  authDomain: "mobilyol-35b61.firebaseapp.com",
+  projectId: "mobilyol-35b61",
+  storageBucket: "mobilyol-35b61.firebasestorage.app",
+  messagingSenderId: "101432761607",
+  appId: "1:101432761607:web:92301bd413ab6091e8f9a2"
+};
+
+const fbReady = typeof firebase !== "undefined" && firebaseConfig.apiKey !== "BURAYA";
+const profile = $("profile"), profileBody = $("profileBody");
+let currentUser = null;
+let authMode = "login"; // "login" və ya "signup"
+
+if (fbReady) {
+  firebase.initializeApp(firebaseConfig);
+  firebase.auth().onAuthStateChanged(u => { currentUser = u; renderProfile(); });
+}
+
+const AUTH_ERR = {
+  "auth/email-already-in-use": "Bu email ilə artıq hesab var. \"Daxil ol\" bölməsinə keç.",
+  "auth/invalid-email": "Email düzgün yazılmayıb.",
+  "auth/weak-password": "Şifrə ən azı 6 simvol olmalıdır.",
+  "auth/invalid-credential": "Email və ya şifrə səhvdir.",
+  "auth/user-not-found": "Bu email ilə hesab tapılmadı.",
+  "auth/wrong-password": "Şifrə səhvdir.",
+  "auth/too-many-requests": "Çox cəhd etdin. Bir az sonra yenidən yoxla.",
+  "auth/network-request-failed": "İnternet bağlantısını yoxla.",
+  "auth/operation-not-allowed": "Firebase-də Email/Password girişi aktiv edilməyib."
+};
+
+function renderProfile() {
+  if (!fbReady) {
+    profileBody.innerHTML = `
+      <h2 class="pf-title">Profil</h2>
+      <div class="pf-card">Hesab sistemi hələ qoşulmayıb. <b>script.js</b> faylındakı <b>firebaseConfig</b> hissəsinə Firebase məlumatlarını yaz.</div>`;
+    return;
+  }
+
+  if (currentUser) {
+    const name = currentUser.displayName || "İstifadəçi";
+    const initial = (currentUser.displayName || currentUser.email || "?")[0].toUpperCase();
+    profileBody.innerHTML = `
+      <div class="pf-head">
+        <div class="pf-avatar">${esc(initial)}</div>
+        <div><b>${esc(name)}</b><span>${esc(currentUser.email || "")}</span></div>
+      </div>
+      <div class="pf-card">Elan yerləşdirmək üçün ortadakı narıncı <b>+</b> düyməsinə bas.</div>
+      <button class="pf-btn ghost" id="pfLogout">Çıxış</button>`;
+    return;
+  }
+
+  const signup = authMode === "signup";
+  profileBody.innerHTML = `
+    <h2 class="pf-title">${signup ? "Hesab aç" : "Hesabına daxil ol"}</h2>
+    <div class="pf-tabs">
+      <button data-mode="login" class="${signup ? "" : "on"}">Daxil ol</button>
+      <button data-mode="signup" class="${signup ? "on" : ""}">Qeydiyyat</button>
+    </div>
+    <div class="pf-form">
+      ${signup ? '<input id="pfName" placeholder="Adın" autocomplete="name">' : ""}
+      <input id="pfEmail" type="email" placeholder="Email" autocomplete="email">
+      <input id="pfPass" type="password" placeholder="Şifrə (ən azı 6 simvol)" autocomplete="${signup ? "new-password" : "current-password"}">
+      <p class="pf-err" id="pfErr" hidden></p>
+      <button class="pf-btn" id="pfSubmit">${signup ? "Hesab aç" : "Daxil ol"}</button>
+    </div>`;
+}
+
+function showAuthErr(msg) {
+  const el = $("pfErr");
+  if (!el) return;
+  el.textContent = msg;
+  el.hidden = false;
+}
+
+async function submitAuth() {
+  const email = $("pfEmail").value.trim();
+  const pass = $("pfPass").value;
+  const signup = authMode === "signup";
+  const name = signup ? $("pfName").value.trim() : "";
+  if (!email || !pass || (signup && !name)) { showAuthErr("Bütün xanaları doldur."); return; }
+
+  const btn = $("pfSubmit");
+  btn.disabled = true;
+  btn.textContent = "Gözlə...";
+  try {
+    if (signup) {
+      const cred = await firebase.auth().createUserWithEmailAndPassword(email, pass);
+      await cred.user.updateProfile({ displayName: name });
+      currentUser = firebase.auth().currentUser;
+      renderProfile();
+    } else {
+      await firebase.auth().signInWithEmailAndPassword(email, pass);
+    }
+  } catch (err) {
+    showAuthErr(AUTH_ERR[err.code] || "Xəta baş verdi: " + err.code);
+    btn.disabled = false;
+    btn.textContent = signup ? "Hesab aç" : "Daxil ol";
+  }
+}
+
+profileBody.addEventListener("click", e => {
+  const tab = e.target.closest("[data-mode]");
+  if (tab) { authMode = tab.dataset.mode; renderProfile(); return; }
+  if (e.target.closest("#pfSubmit")) { submitAuth(); return; }
+  if (e.target.closest("#pfLogout")) { firebase.auth().signOut(); }
+});
+profileBody.addEventListener("keydown", e => {
+  if (e.key === "Enter" && e.target.tagName === "INPUT") submitAuth();
+});
+
+function openProfile() {
+  closeDetail();
+  closeInbox();
+  renderProfile();
+  profile.hidden = false;
+  navHome.classList.remove("on");
+  navFavs.classList.remove("on");
+  $("navProfile").classList.add("on");
+}
+function closeProfile() {
+  profile.hidden = true;
+  $("navProfile").classList.remove("on");
+}
+
+renderProfile();
