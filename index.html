@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a2270">
+  <title>MobilYol - Telefon elanları</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Mr+Dafoe&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="is-loading">
+
+  <div class="intro" id="intro">
+    <div class="particles">
+      <span style="--x:12%;--d:0s"></span><span style="--x:28%;--d:.5s"></span>
+      <span style="--x:44%;--d:.2s"></span><span style="--x:62%;--d:.8s"></span>
+      <span style="--x:78%;--d:.35s"></span><span style="--x:90%;--d:.65s"></span>
+    </div>
+
+    <div class="road"><div class="road-plane"><i class="dash"></i></div></div>
+
+    <div class="stage">
+      <div class="phone">
+        <b class="ring"></b><b class="ring"></b><b class="ring"></b>
+        <div class="phone-body">
+          <i class="notch"></i>
+          <div class="screen">
+            <svg class="pin" viewBox="0 0 24 24" width="34" height="34" aria-hidden="true">
+              <path fill="#ff8a1f" d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <svg class="intro-svg" viewBox="0 0 400 130" aria-label="MobilYol">
+        <text class="intro-text" x="200" y="95" text-anchor="middle">MobilYol</text>
+      </svg>
+      <p class="intro-sub">telefonun yolu buradan keçir</p>
+    </div>
+  </div>
+
+  <header class="topbar">
+    <a href="#" class="logo">Mobil<span>Yol</span></a>
+    <select class="city-select" id="citySel" aria-label="Şəhər seç">
+      <option value="all">📍 Bütün şəhərlər</option>
+      <option>Bakı</option>
+      <option>Sumqayıt</option>
+      <option>Gəncə</option>
+      <option>Mingəçevir</option>
+      <option>Lənkəran</option>
+    </select>
+  </header>
+
+  <div class="search">
+    <input type="search" id="search" placeholder="Telefon axtar: iPhone, Samsung..." autocomplete="off">
+  </div>
+
+  <nav class="chips" id="chips">
+    <button class="chip active" data-brand="all">Hamısı</button>
+    <button class="chip" data-brand="Apple">Apple</button>
+    <button class="chip" data-brand="Samsung">Samsung</button>
+    <button class="chip" data-brand="Xiaomi">Xiaomi</button>
+    <button class="chip" data-brand="Honor">Honor</button>
+    <button class="chip" data-brand="Realme">Realme</button>
+  </nav>
+
+  <section class="hero">
+    <h1>Telefonunu tap, ya da sat.</h1>
+    <p>Yeni və işlənmiş telefon elanları bir yerdə.</p>
+  </section>
+
+  <main>
+    <h2 class="sec-title" id="secTitle">Yeni elanlar</h2>
+    <div class="grid" id="grid"></div>
+    <p class="empty" id="empty" hidden>Heç nə tapılmadı.</p>
+  </main>
+
+  <nav class="bottom-nav">
+    <a href="#" class="on" id="navHome"><i>🏠</i>Ana səhifə</a>
+    <a href="#" id="navSearch"><i>🔍</i>Axtar</a>
+    <a href="#" class="plus" id="plusBtn"><i>＋</i></a>
+    <a href="#" id="navFavs"><i>❤️</i>Seçilmişlər<b class="badge" id="favCount" hidden>0</b></a>
+    <a href="#" id="navProfile"><i>👤</i>Profil</a>
+  </nav>
+
+  <div class="sheet" id="sheet" hidden>
+    <div class="sheet-box">
+      <h3>Elan yerləşdir</h3>
+      <input id="fName" placeholder="Telefonun adı (məs: iPhone 13 128GB)">
+      <select id="fBrand">
+        <option>Apple</option>
+        <option>Samsung</option>
+        <option>Xiaomi</option>
+        <option>Honor</option>
+        <option>Realme</option>
+      </select>
+      <input id="fPrice" type="number" placeholder="Qiymət (₼)">
+      <input id="fCity" placeholder="Şəhər (məs: Bakı)">
+      <div class="sheet-row">
+        <button class="ghost" id="fCancel">Ləğv et</button>
+        <button id="fSave">Yerləşdir</button>
+      </div>
+    </div>
+  </div>
+
+  <section class="detail" id="detail" hidden>
+    <div class="detail-top">
+      <button class="d-btn" id="dBack" aria-label="Geri">←</button>
+      <button class="d-btn" id="dFav" aria-label="Seçilmişlərə əlavə et">♥</button>
+    </div>
+    <div class="d-pic" id="dPic"></div>
+    <div class="d-body">
+      <div class="d-price" id="dPrice"></div>
+      <h2 class="d-name" id="dName"></h2>
+      <div class="d-meta" id="dMeta"></div>
+      <h3 class="d-sub">Təsvir</h3>
+      <p class="d-desc" id="dDesc"></p>
+    </div>
+    <div class="d-actions">
+      <a class="d-call" id="dCall" href="#">📞 Zəng et</a>
+      <a class="d-wa" id="dWa" href="#" target="_blank" rel="noopener">💬 WhatsApp</a>
+    </div>
+  </section>
+
+  <script src="script.js"></script>
+</body>
+</html>
