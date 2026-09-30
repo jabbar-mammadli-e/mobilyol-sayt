@@ -1,9 +1,8 @@
 // ===== Giriş animasiyası (3 saniyə) =====
-// Sayta hər girəndə çıxır. Saytdan çıxıb (başqa tab, başqa tətbiq) geri qayıdanda da yenidən çıxır.
 const $ = id => document.getElementById(id);
 const intro = $("intro");
-const INTRO_MS = 3000;   // animasiyanın müddəti
-const AWAY_MS = 3000;    // bu qədər müddət çölə çıxıbsa, qayıdanda yenidən göstər
+const INTRO_MS = 3000;
+const AWAY_MS = 3000;
 let introTimer, hiddenAt = 0;
 
 function closeIntro() {
@@ -11,21 +10,18 @@ function closeIntro() {
   intro.classList.add("hide");
   document.body.classList.remove("is-loading");
 }
-
 function playIntro() {
   clearTimeout(introTimer);
   intro.style.transition = "none";
   intro.classList.remove("hide", "play");
   document.body.classList.add("is-loading");
-  void intro.offsetWidth;             // animasiyanı sıfırlayır
+  void intro.offsetWidth;
   intro.style.transition = "";
   intro.classList.add("play");
   introTimer = setTimeout(closeIntro, INTRO_MS);
 }
-
 intro.addEventListener("click", closeIntro);
 playIntro();
-
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) hiddenAt = Date.now();
   else if (hiddenAt && Date.now() - hiddenAt > AWAY_MS) playIntro();
@@ -45,13 +41,15 @@ const phones = [
 ];
 
 const grid = $("grid"), empty = $("empty"), searchEl = $("search");
+searchEl.value = "";
+window.addEventListener("pageshow", () => { searchEl.value = ""; render(); });
 const chips = $("chips"), secTitle = $("secTitle");
 const hero = document.querySelector(".hero");
 const favCount = $("favCount"), navHome = $("navHome"), navFavs = $("navFavs");
 
 let brand = "all";
 let city = "all";
-let view = "home"; // "home" və ya "favs"
+let view = "home";
 
 let favs;
 try { favs = new Set(JSON.parse(localStorage.getItem("mobilyol_favs") || "[]")); }
@@ -82,7 +80,7 @@ function render() {
 
   grid.innerHTML = list.map(p => `
     <article class="card" data-name="${p.name}">
-      <div class="pic" style="background:${p.bg}">${p.emoji}</div>
+      <div class="pic" style="background:${p.bg}">${p.photo ? `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover">` : p.emoji}</div>
       <button class="fav ${favs.has(p.name) ? "on" : ""}" data-name="${p.name}" aria-label="Seçilmişlərə əlavə et">♥</button>
       <div class="info">
         <div class="price">${p.price} ₼</div>
@@ -98,7 +96,6 @@ function render() {
   empty.hidden = list.length > 0;
 }
 
-// ===== Axtarış, şəhər və filtr =====
 searchEl.addEventListener("input", render);
 
 $("citySel").addEventListener("change", e => {
@@ -116,7 +113,6 @@ chips.addEventListener("click", e => {
   render();
 });
 
-// ===== Ürək düyməsi =====
 grid.addEventListener("click", e => {
   const fav = e.target.closest(".fav");
   if (fav) {
@@ -130,10 +126,9 @@ grid.addEventListener("click", e => {
   if (card) openDetail(card.dataset.name);
 });
 
-// ===== Alt menyu =====
 function go(e, next) {
   e.preventDefault();
- closeInbox(); closeProfile();
+  closeInbox(); closeProfile(); closeSettings();
   view = next;
   render();
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -143,7 +138,6 @@ navFavs.addEventListener("click", e => go(e, "favs"));
 $("navMsgs").addEventListener("click", e => { e.preventDefault(); openInbox(); });
 $("navProfile").addEventListener("click", e => { e.preventDefault(); openProfile(); });
 
-// ===== Elan yerləşdirmə =====
 const sheet = $("sheet");
 const openSheet = e => { if (e) e.preventDefault(); sheet.hidden = false; };
 const closeSheet = () => { sheet.hidden = true; };
@@ -158,8 +152,31 @@ $("plusBtn").addEventListener("click", e => {
   }
   openSheet();
 });
-$("fCancel").addEventListener("click", closeSheet);
+$("fCancel").addEventListener("click", () => { resetSheetForm(); closeSheet(); });
 sheet.addEventListener("click", e => { if (e.target === sheet) closeSheet(); });
+
+let selectedListingPhoto = null;
+const fPhotoPreview = $("fPhotoPreview");
+
+$("fPhotoInput").addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    selectedListingPhoto = reader.result;
+    fPhotoPreview.innerHTML = `<img src="${selectedListingPhoto}" alt="">`;
+  };
+  reader.readAsDataURL(file);
+});
+
+function resetSheetForm() {
+  $("fName").value = ""; $("fPrice").value = ""; $("fCity").value = "";
+  $("fRam").value = ""; $("fStorage").value = "";
+  $("fCondition").value = "Yeni"; $("fDelivery").value = "Var";
+  $("fDesc").value = "";
+  selectedListingPhoto = null;
+  fPhotoPreview.innerHTML = "📷";
+}
 
 $("fSave").addEventListener("click", () => {
   const name = $("fName").value.trim();
@@ -169,9 +186,15 @@ $("fSave").addEventListener("click", () => {
   phones.unshift({
     name, brand: $("fBrand").value, price,
     city: $("fCity").value.trim() || "Bakı",
+    ram: $("fRam").value,
+    storage: $("fStorage").value,
+    condition: $("fCondition").value,
+    delivery: $("fDelivery").value,
+    desc: $("fDesc").value.trim(),
+    photo: selectedListingPhoto,
     time: "İndi", emoji: "📱", bg: "#dfe9ff"
   });
-  $("fName").value = ""; $("fPrice").value = ""; $("fCity").value = "";
+  resetSheetForm();
   view = "home";
   closeInbox(); closeProfile();
   render();
@@ -181,7 +204,7 @@ $("fSave").addEventListener("click", () => {
 render();
 
 // ===== Elanın ətraflı səhifəsi =====
-const CONTACT = "994501234567"; // öz nömrəni yaz: ölkə kodu ilə, + və boşluqsuz
+const CONTACT = "994501234567";
 const detail = $("detail");
 let openName = null;
 
@@ -189,11 +212,17 @@ function openDetail(name) {
   const p = phones.find(x => x.name === name);
   if (!p) return;
   openName = name;
-  $("dPic").textContent = p.emoji;
+  $("dPic").innerHTML = p.photo ? `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover">` : p.emoji;
   $("dPrice").textContent = p.price + " ₼";
   $("dName").textContent = p.name;
-  $("dMeta").textContent = `${p.brand} • ${p.city} • ${p.time}`;
-  $("dDesc").textContent = p.desc || "Satıcı hələ təsvir əlavə etməyib.";
+  const metaParts = [p.brand, p.city, p.time];
+  if (p.ram) metaParts.push(p.ram + " RAM");
+  if (p.storage) metaParts.push(p.storage);
+  if (p.condition) metaParts.push(p.condition);
+  $("dMeta").textContent = metaParts.join(" • ");
+  let descText = p.desc || "Satıcı hələ təsvir əlavə etməyib.";
+  if (p.delivery) descText += (p.desc ? "\n\nÇatdırılma: " : "Çatdırılma: ") + p.delivery;
+  $("dDesc").textContent = descText;
   const num = p.phone || CONTACT;
   $("dCall").href = "tel:+" + num;
   $("dWa").href = "https://wa.me/" + num + "?text=" +
@@ -203,13 +232,11 @@ function openDetail(name) {
   detail.scrollTop = 0;
   document.body.style.overflow = "hidden";
 }
-
 function closeDetail() {
   detail.hidden = true;
   openName = null;
   document.body.style.overflow = "";
 }
-
 $("dBack").addEventListener("click", closeDetail);
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" && !detail.hidden) closeDetail();
@@ -220,7 +247,9 @@ $("dFav").addEventListener("click", () => {
   saveFavs();
   $("dFav").classList.toggle("on", favs.has(openName));
   render();
-});// ===== Mesajlar =====
+});
+
+// ===== Mesajlar =====
 const inbox = $("inbox"), chat = $("chat");
 const inboxList = $("inboxList"), inboxEmpty = $("inboxEmpty");
 const cMsgs = $("cMsgs"), cText = $("cText");
@@ -254,13 +283,14 @@ function renderInbox() {
 
 function openInbox() {
   closeDetail();
+  closeSettings();
   renderInbox();
   inbox.hidden = false;
   navHome.classList.remove("on");
   navFavs.classList.remove("on");
   $("navMsgs").classList.add("on");
 }
-  function closeInbox() {
+function closeInbox() {
   closeProfile();
   closeDetail();
   inbox.hidden = true;
@@ -303,7 +333,9 @@ inboxList.addEventListener("click", e => {
 $("cBack").addEventListener("click", closeChat);
 $("cSend").addEventListener("click", sendMsg);
 cText.addEventListener("keydown", e => { if (e.key === "Enter") sendMsg(); });
-$("dMsg").addEventListener("click", e => { e.preventDefault(); if (openName) openChat(openName); });// ===== Profil və giriş (Firebase) =====
+$("dMsg").addEventListener("click", e => { e.preventDefault(); if (openName) openChat(openName); });
+
+// ===== Profil və giriş (Firebase) =====
 const firebaseConfig = {
   apiKey: "AIzaSyD9PQBrveAB_lscWoBS4g7wXWcyzhaAw38",
   authDomain: "mobilyol-35b61.firebaseapp.com",
@@ -316,7 +348,16 @@ const firebaseConfig = {
 const fbReady = typeof firebase !== "undefined" && firebaseConfig.apiKey !== "BURAYA";
 const profile = $("profile"), profileBody = $("profileBody");
 let currentUser = null;
-let authMode = "login"; // "login" və ya "signup"
+let authMode = "login";
+let editingProfile = false;
+let selectedPhoto = null;
+
+function getAvatar(uid) {
+  try { return localStorage.getItem("mobilyol_avatar_" + uid) || null; } catch { return null; }
+}
+function setAvatarStore(uid, dataUrl) {
+  try { localStorage.setItem("mobilyol_avatar_" + uid, dataUrl); } catch {}
+}
 
 if (fbReady) {
   firebase.initializeApp(firebaseConfig);
@@ -346,13 +387,37 @@ function renderProfile() {
   if (currentUser) {
     const name = currentUser.displayName || "İstifadəçi";
     const initial = (currentUser.displayName || currentUser.email || "?")[0].toUpperCase();
+    const avatar = getAvatar(currentUser.uid);
+    const fullName = currentUser.displayName || "";
+    const [curAd, ...restSoyad] = fullName.split(" ");
+    const curSoyad = restSoyad.join(" ");
+
+    if (editingProfile) {
+      if (selectedPhoto === null) selectedPhoto = avatar || "";
+      profileBody.innerHTML = `
+        <h2 class="pf-title">Profili düzəlt</h2>
+        <div class="pf-photo-pick">
+          <div class="pf-photo-preview" id="pfPhotoPreview">${selectedPhoto ? `<img src="${selectedPhoto}" alt="">` : esc(initial)}</div>
+          <label class="pf-photo-btn" for="pfPhotoInput">📷 Şəkil əlavə et</label>
+          <input type="file" id="pfPhotoInput" accept="image/*" hidden>
+        </div>
+        <div class="pf-form">
+          <input id="pfAdEdit" placeholder="Ad" value="${esc(curAd || "")}">
+          <input id="pfSoyadEdit" placeholder="Soyad" value="${esc(curSoyad || "")}">
+          <p class="pf-err" id="pfEditErr" hidden></p>
+          <button class="pf-btn" id="pfSaveEdit">Yadda saxla</button>
+          <button class="pf-btn ghost" id="pfCancelEdit">Ləğv et</button>
+        </div>`;
+      return;
+    }
+
     profileBody.innerHTML = `
       <div class="pf-head">
-        <div class="pf-avatar">${esc(initial)}</div>
+        <div class="pf-avatar">${avatar ? `<img src="${avatar}" alt="">` : esc(initial)}</div>
         <div><b>${esc(name)}</b><span>${esc(currentUser.email || "")}</span></div>
+        <button class="pf-gear" id="pfGear" aria-label="Ayarlar">⚙️</button>
       </div>
-      <div class="pf-card">Elan yerləşdirmək üçün ortadakı narıncı <b>+</b> düyməsinə bas.</div>
-      <button class="pf-btn ghost" id="pfLogout">Çıxış</button>`;
+      <button class="pf-btn ghost" id="pfEditBtn">Profili düzəlt</button>`;
     return;
   }
 
@@ -405,14 +470,46 @@ async function submitAuth() {
   }
 }
 
-profileBody.addEventListener("click", e => {
+profileBody.addEventListener("click", async e => {
   const tab = e.target.closest("[data-mode]");
   if (tab) { authMode = tab.dataset.mode; renderProfile(); return; }
   if (e.target.closest("#pfSubmit")) { submitAuth(); return; }
-  if (e.target.closest("#pfLogout")) { firebase.auth().signOut(); }
+
+  if (e.target.closest("#pfEditBtn")) { editingProfile = true; selectedPhoto = null; renderProfile(); return; }
+  if (e.target.closest("#pfCancelEdit")) { editingProfile = false; renderProfile(); return; }
+  if (e.target.closest("#pfGear")) { openSettings(); return; }
+
+  const av = e.target.closest(".pf-avatar img");
+  if (av) { openPhotoView(av.src); return; }
+
+  if (e.target.closest("#pfSaveEdit")) {
+    const ad = $("pfAdEdit").value.trim();
+    const soyad = $("pfSoyadEdit").value.trim();
+    const err = $("pfEditErr");
+    if (!ad) { err.textContent = "Adını yaz."; err.hidden = false; return; }
+    const fullName = soyad ? ad + " " + soyad : ad;
+    try {
+      await currentUser.updateProfile({ displayName: fullName });
+      if (selectedPhoto) setAvatarStore(currentUser.uid, selectedPhoto);
+      currentUser = firebase.auth().currentUser;
+      editingProfile = false;
+      renderProfile();
+    } catch (err2) {
+      err.textContent = "Xəta baş verdi, yenidən yoxla.";
+      err.hidden = false;
+    }
+  }
 });
 profileBody.addEventListener("keydown", e => {
   if (e.key === "Enter" && e.target.tagName === "INPUT") submitAuth();
+});
+profileBody.addEventListener("change", e => {
+  if (e.target.id !== "pfPhotoInput") return;
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => { selectedPhoto = reader.result; renderProfile(); };
+  reader.readAsDataURL(file);
 });
 
 function openProfile() {
@@ -428,5 +525,91 @@ function closeProfile() {
   profile.hidden = true;
   $("navProfile").classList.remove("on");
 }
-
 renderProfile();
+
+// ===== Şəkilə baxış =====
+const photoView = $("photoView"), pvImg = $("pvImg");
+function openPhotoView(src) {
+  pvImg.src = src;
+  photoView.hidden = false;
+}
+function closePhotoView() {
+  photoView.hidden = true;
+  pvImg.src = "";
+}
+$("pvBack").addEventListener("click", closePhotoView);
+photoView.addEventListener("click", e => { if (e.target === photoView) closePhotoView(); });
+
+// ===== Ayarlar =====
+const settings = $("settings"), settingsBody = $("settingsBody");
+const bottomNav = document.querySelector(".bottom-nav");
+
+function renderSettings() {
+  settingsBody.innerHTML = `
+    <div class="st-top">
+      <button class="d-btn" id="stBack" aria-label="Geri">←</button>
+      <b>Ayarlar</b>
+    </div>
+    <div class="st-list">
+      <div class="st-item" data-item="privacy"><span>🔒 Gizlilik və Təhlükəsizlik</span><span class="arrow">›</span></div>
+      <div class="st-item" data-item="help"><span>❓ Kömək</span><span class="arrow">›</span></div>
+      <div class="st-item" data-item="about"><span>ℹ️ Haqqında</span><span class="arrow">›</span></div>
+      <div class="st-item disabled"><span>🌐 Dil</span><span class="arrow">Tezliklə</span></div>
+    </div>
+    <button class="st-logout" id="stLogoutBtn">Çıxış</button>`;
+}
+
+function openSettings() {
+  closeDetail();
+  closeInbox();
+  renderSettings();
+  settings.hidden = false;
+  bottomNav.style.display = "none";
+}
+function closeSettings() {
+  settings.hidden = true;
+  bottomNav.style.display = "";
+}
+
+settingsBody.addEventListener("click", e => {
+  if (e.target.closest("#stBack")) { closeSettings(); return; }
+  if (e.target.closest("#stLogoutBtn")) { openLogoutSheet(); return; }
+  const item = e.target.closest(".st-item:not(.disabled)");
+  if (item) alert("Bu bölmə tezliklə hazır olacaq.");
+});
+
+// ===== Çıxış təsdiqi =====
+const logoutSheet = $("logoutSheet");
+function openLogoutSheet() { logoutSheet.hidden = false; }
+function closeLogoutSheet() {
+  logoutSheet.hidden = true;
+  $("loEmail").value = "";
+  $("loPass").value = "";
+  $("loErr").hidden = true;
+}
+$("loCancel").addEventListener("click", closeLogoutSheet);
+logoutSheet.addEventListener("click", e => { if (e.target === logoutSheet) closeLogoutSheet(); });
+
+$("loConfirm").addEventListener("click", async () => {
+  const email = $("loEmail").value.trim();
+  const pass = $("loPass").value;
+  const err = $("loErr");
+  if (!email || !pass) { err.textContent = "Email və şifrəni yaz."; err.hidden = false; return; }
+  if (currentUser && currentUser.email && email.toLowerCase() !== currentUser.email.toLowerCase()) {
+    err.textContent = "Bu email cari hesabla uyğun gəlmir."; err.hidden = false; return;
+  }
+  try {
+    const cred = firebase.auth.EmailAuthProvider.credential(email, pass);
+    await currentUser.reauthenticateWithCredential(cred);
+    await firebase.auth().signOut();
+    closeLogoutSheet();
+    closeSettings();
+  } catch (e2) {
+    err.textContent = "Email və ya şifrə səhvdir.";
+    err.hidden = false;
+  }
+});
+
+// ===== Axtarış xanasının avtomatik doldurulmasının qarşısını al =====
+searchEl.setAttribute("readonly", "true");
+searchEl.addEventListener("focus", () => searchEl.removeAttribute("readonly"));

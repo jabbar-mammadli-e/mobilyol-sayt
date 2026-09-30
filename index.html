@@ -54,7 +54,7 @@
   </header>
 
   <div class="search">
-    <input type="search" id="search" placeholder="Telefon axtar: iPhone, Samsung..." autocomplete="off">
+    <input type="text" id="search" name="q_x7z9" placeholder="Telefon axtar: iPhone, Samsung..." autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')">
   </div>
 
   <nav class="chips" id="chips">
@@ -86,9 +86,17 @@
   </nav>
 
   <div class="sheet" id="sheet" hidden>
-    <div class="sheet-box">
+    <div class="sheet-box sheet-scroll">
       <h3>Elan yerləşdir</h3>
+
+      <div class="f-photo-pick">
+        <div class="f-photo-preview" id="fPhotoPreview">📷</div>
+        <label class="pf-photo-btn" for="fPhotoInput">📷 Şəkil əlavə et</label>
+        <input type="file" id="fPhotoInput" accept="image/*" hidden>
+      </div>
+
       <input id="fName" placeholder="Telefonun adı (məs: iPhone 13 128GB)">
+
       <select id="fBrand">
         <option>Apple</option>
         <option>Samsung</option>
@@ -96,8 +104,41 @@
         <option>Honor</option>
         <option>Realme</option>
       </select>
+
+      <select id="fRam">
+        <option value="">RAM seç</option>
+        <option>3 GB</option>
+        <option>4 GB</option>
+        <option>6 GB</option>
+        <option>8 GB</option>
+        <option>12 GB</option>
+        <option>16 GB</option>
+      </select>
+
+      <select id="fStorage">
+        <option value="">Yaddaş seç</option>
+        <option>32 GB</option>
+        <option>64 GB</option>
+        <option>128 GB</option>
+        <option>256 GB</option>
+        <option>512 GB</option>
+        <option>1 TB</option>
+      </select>
+
+      <select id="fCondition">
+        <option value="Yeni">Yeni</option>
+        <option value="İşlənmiş">İşlənmiş</option>
+      </select>
+
+      <select id="fDelivery">
+        <option value="Var">Çatdırılma var</option>
+        <option value="Yox">Çatdırılma yoxdur</option>
+      </select>
+
       <input id="fPrice" type="number" placeholder="Qiymət (₼)">
       <input id="fCity" placeholder="Şəhər (məs: Bakı)">
+      <textarea id="fDesc" rows="3" placeholder="Telefon haqqında məlumat yaz (vəziyyəti, aksesuarlar, səbəb və s.)"></textarea>
+
       <div class="sheet-row">
         <button class="ghost" id="fCancel">Ləğv et</button>
         <button id="fSave">Yerləşdir</button>
@@ -124,7 +165,8 @@
       <a class="d-wa" id="dWa" href="#" target="_blank" rel="noopener">💬 WhatsApp</a>
     </div>
   </section>
-<section class="inbox" id="inbox" hidden>
+
+  <section class="inbox" id="inbox" hidden>
     <h2 class="inbox-title">Mesajlar</h2>
     <div id="inboxList"></div>
     <p class="empty" id="inboxEmpty" hidden>Hələ yazışman yoxdur. Elana baxıb "Mesaj yaz" düyməsinə bas.</p>
@@ -141,9 +183,33 @@
       <button id="cSend" aria-label="Göndər">➤</button>
     </div>
   </section>
- <section class="profile" id="profile" hidden>
+
+  <section class="profile" id="profile" hidden>
     <div id="profileBody"></div>
   </section>
+
+  <section class="settings" id="settings" hidden>
+    <div id="settingsBody"></div>
+  </section>
+
+  <div class="photo-view" id="photoView" hidden>
+    <button class="d-btn" id="pvBack" aria-label="Bağla">←</button>
+    <img id="pvImg" src="" alt="Profil şəkli">
+  </div>
+
+  <div class="sheet" id="logoutSheet" hidden>
+    <div class="sheet-box">
+      <h3>Hesabdan çıxış</h3>
+      <p style="color:#a9bce9; font-size:14px; margin-top:-6px;">Təhlükəsizlik üçün email və şifrəni təsdiqlə.</p>
+      <input id="loEmail" type="email" placeholder="Email" autocomplete="off">
+      <input id="loPass" type="password" placeholder="Şifrə" autocomplete="off">
+      <p class="pf-err" id="loErr" hidden></p>
+      <div class="sheet-row">
+        <button class="ghost" id="loCancel">Ləğv et</button>
+        <button id="loConfirm" style="background:#ff3b30">Çıxış</button>
+      </div>
+    </div>
+  </div>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
